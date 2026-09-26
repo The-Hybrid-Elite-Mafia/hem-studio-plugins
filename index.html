@@ -6318,7 +6318,7 @@ const observer=new MutationObserver(updateLights);observer.observe(panel,{subtre
 const cleanTransport=transportDock(container);
 return()=>{cleanTransport();observer.disconnect();cleanup?.()};};
 const previewObserver=new MutationObserver(()=>{if(preview.open&&!preview.querySelector('.plugin-transport'))transportDock(preview)});previewObserver.observe(preview,{attributes:true,attributeFilter:['open']});
-refreshRack();window.vault(0);
+refreshRack(); // Start on the motherboard; open the vault only on request.
 })();
 
 (()=>{const labels={PLAYER:['PLAYER','cyan'],'Plugin Vault':['PLUGIN VAULT','cyan'],Presets:['PRESETS','violet'],'Visualizer information':['VISUALIZER','cyan'],'Audio settings':['AUDIO SETTINGS','cyan'],'Close playback':['\u2715 CLOSE','rose'],'Save master preset':['SAVE','cyan'],'Load master preset':['LOAD','cyan'],'Delete master preset':['DELETE','rose']};for(const b of document.querySelectorAll('#console-stage button')){const setting=labels[b.getAttribute('aria-label')];if(setting){b.classList.add('hem-nav');b.dataset.navTone=setting[1];b.textContent=setting[0]}}})();
