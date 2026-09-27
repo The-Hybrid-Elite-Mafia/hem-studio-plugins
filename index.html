@@ -134,29 +134,6 @@ body{display:flex;align-items:center;justify-content:center}
 #hem-vault .vault-foot{padding:.5cqw 1cqw}
 #hem-vault .vault-top h2{font-size:clamp(12px,1.7vw,22px)}
 #hem-vault .vault-brand{font-size:clamp(12px,2vw,30px)}
-.guide-launch{position:absolute;left:1.5%;top:1.5%;z-index:15;padding:.7cqw 1.2cqw;border:1px solid #68e4e7;border-radius:.5cqw;background:#09202a;color:#c9fcff;font:700 1.1cqw Arial;cursor:pointer}
-.guide-panel{position:absolute;inset:3%;z-index:40;display:flex;flex-direction:column;gap:2.3cqw;padding:3cqw;background:radial-gradient(ellipse at 0 0,#102f3b,#051420 65%);border:1px solid #70e4e5;outline:1px solid #32606a;outline-offset:.55cqw;box-shadow:0 0 0 .3cqw #071016,0 0 2cqw #000b;border-radius:.4cqw;color:#def5fa;font:1.5cqw/1.5 Arial}
-.guide-head{display:flex;align-items:flex-start;gap:2cqw}
-.guide-head>div{flex:1}
-.guide-kicker{color:#77bfc8;letter-spacing:.16em;font-size:1cqw;font-weight:700}
-.guide-panel h1{font-size:2.5cqw;line-height:1.2;margin:.4cqw 0 0}
-.guide-panel h2{font-size:2cqw;line-height:1.25;margin:0 0 1cqw}
-.guide-panel p{margin:0 0 1.6cqw;color:#b7d3df}
-.guide-panel button,.guide-panel select{padding:1cqw 1.2cqw;background:linear-gradient(#152d3c,#081923);border:1px solid #375866;border-radius:.7cqw;box-shadow:inset 0 1px #a1d7e222;color:#dcf6ff;font:700 1.3cqw Arial;cursor:pointer;min-width:0}
-.guide-panel button:hover,.guide-panel button:focus-visible,.guide-launch:focus-visible{border-color:#7ff9f2;outline:1px solid #7ff9f2;outline-offset:2px}
-.guide-panel button.primary,.guide-steps button[aria-current=step]{background:#81e8e3;border-color:#94fff6;color:#09272c}
-.guide-panel button:disabled{opacity:.45;cursor:not-allowed}
-.guide-steps{display:flex;gap:1cqw}
-.guide-body{flex:1;min-height:0;overflow:auto;scrollbar-color:#346d7c #071823}
-.guide-actions{display:flex;gap:1.2cqw;flex-wrap:wrap;align-items:center;margin-top:1.6cqw}
-.guide-mode{display:flex;gap:1cqw;align-items:center;margin-bottom:1.6cqw;color:#9bc5d0;font-size:1.2cqw}
-.guide-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:1cqw;margin:1cqw 0}
-.guide-metric{padding:1cqw;background:#06111a;border:1px solid #2d5360;border-radius:.5cqw;font-size:1.1cqw;color:#8bb5c4}
-.guide-metric strong{display:block;font:700 1.8cqw/1.5 monospace;color:#92ece6}
-.guide-report{margin:1cqw 0;padding-left:2cqw;font-size:1.3cqw;color:#c6dfe7}
-.guide-footer{display:flex;justify-content:space-between;gap:2cqw;border-top:1px solid #224554;padding-top:1cqw;font-size:1.1cqw;color:#89b2c3}
-.guide-footer output{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:78%}
-.guide-status{font-size:1.2cqw;color:#8fe6df;min-height:1.5em}
 .host-status{position:absolute;left:39%;right:2%;bottom:.4%;font: .85cqw Arial;color:#9bc3cf;z-index:10;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
 
 </style></head><body>
@@ -6474,101 +6451,7 @@ window.HEM_STEMS={importFiles,renderMix,wav,zip,get active(){return active},get 
 })();
 
 
-;(()=>{'use strict';
-const api=window.HEM_STEMS;
-let step=0,checking=false,importing=false,analysis=null,analysisSource=null,importMode='song';
-const launch=document.createElement('button');launch.className='guide-launch';launch.textContent='START HERE';launch.setAttribute('aria-expanded','true');stage.append(launch);
-const guide=document.createElement('section');guide.id='easyGuide';guide.className='guide-panel';guide.setAttribute('aria-label','Start here');
-guide.innerHTML='<header class="guide-head"><div><div class="guide-kicker">GHOST · YOUR WORKFLOW</div><h1>Start here. One step at a time.</h1></div><button id="guide-console">Show full console</button></header><nav class="guide-steps" aria-label="Your progress"></nav><div class="guide-body"></div><footer class="guide-footer"><output id="guide-session">No audio loaded</output><span>Local audio · 16:9</span></footer>';
-stage.append(guide);const body=guide.querySelector('.guide-body'),steps=guide.querySelector('.guide-steps');
-const status=$('status');status.className='host-status';stage.append(status);
-function hostAccess(visible){for(const child of stage.children)if(child!==guide&&child!==launch&&child!==status)child.inert=!visible;launch.hidden=!visible;status.hidden=!visible}
-function show(){guide.hidden=false;hostAccess(false);launch.setAttribute('aria-expanded','true');render();$('guide-console').focus()}
-function hide(){guide.hidden=true;hostAccess(true);launch.setAttribute('aria-expanded','false');launch.focus()}
-launch.onclick=show;$('guide-console').onclick=hide;
-function currentSources(){return api.active?api.tracks.filter(t=>t.buffer).map(t=>t.buffer):buffer?[buffer]:[]}
-function button(label,fn,parent,primary=false){const b=document.createElement('button');b.textContent=label;if(primary)b.className='primary';b.onclick=async()=>{try{await fn()}catch(e){say(e.message,true);render()}};parent.append(b);return b}
-function goto(n){step=n;render()}
-const stepButtons=['1 · Load','2 · Check','3 · Apply','4 · Listen & save'].map((label,i)=>button(label,()=>goto(i),steps));
-function text(tag,value,cls){const el=document.createElement(tag);el.textContent=value;if(cls)el.className=cls;body.append(el);return el}
-function actions(){const row=document.createElement('div');row.className='guide-actions';body.append(row);return row}
-function openVault(){hide();vault(Math.max(0,slotState.findIndex(s=>!s.pluginId)))}
-function session(){return buffer?api.active?api.tracks.filter(t=>t.buffer).length+' aligned stems · '+clock(buffer.duration):$('title').textContent+' · '+clock(buffer.duration):'No audio loaded'}
-function render(){
- const sources=currentSources(),loaded=sources.length>0,locked=checking||importing||api.busy;
- if(analysisSource&&analysisSource!==buffer){analysis=null;analysisSource=null}
- stepButtons.forEach((b,i)=>{if(i===step)b.setAttribute('aria-current','step');else b.removeAttribute('aria-current');b.disabled=locked||(i>0&&!loaded)});
- $('guide-session').textContent=session();body.replaceChildren();
- if(step===0){
-  text('h2','Load your song');text('p','Import your song or aligned stems. Your recorded vocals stay audio.');
-  const label=document.createElement('label');label.className='guide-mode';label.textContent='Import as';const select=document.createElement('select');select.setAttribute('aria-label','Import mode');for(const [value,name]of [['song','Song / playlist'],['stems','Aligned stems · play together']]){const o=document.createElement('option');o.value=value;o.textContent=name;select.append(o)}select.value=importMode;select.disabled=locked;select.onchange=()=>{importMode=select.value};label.append(select);body.append(label);
-  const row=actions();button('Load song / stems',()=>$('files').click(),row,true).disabled=locked;
-  button('Next · check my audio',async()=>{step=1;await checkAudio()},row).disabled=locked||!loaded;
-  button('Manual plugin workshop',openVault,row).disabled=locked;
-  if(loaded)text('p',session());
- }else if(step===1){
-  text('h2','Check your audio');
-  text('p',checking?'Checking the full audio selection…':'Check the original audio before choosing your plugins.');
-  if(analysis){
-   const metrics=document.createElement('div');metrics.className='guide-metrics';
-   for(const [label,value]of [['SAMPLE PEAK',analysis.peakDb+' dBFS'],['RMS',analysis.rmsDb+' dBFS'],['CORRELATION',analysis.correlation],['DURATION',clock(analysis.duration)]]){const card=document.createElement('div');card.className='guide-metric';card.textContent=label;const strong=document.createElement('strong');strong.textContent=value;card.append(strong);metrics.append(card)}body.append(metrics);
-   const list=text('ul','','guide-report');for(const note of analysis.notes){const li=document.createElement('li');li.textContent=note;list.append(li)}
-  }
-  const row=actions();button(analysis?'Check again':'Check my audio',checkAudio,row,!analysis).disabled=locked||!loaded;
-  button('Next · choose plugins',()=>goto(2),row,!!analysis).disabled=locked||!analysis;
- }else if(step===2){
-  text('h2','Apply your plugins');text('p','Choose a plugin from the vault, then turn its faceplate knobs. Use BYPASS to compare the change.');
-  const used=slotState.filter(s=>s.pluginId);text('p',used.length?used.map(s=>window.HEM_REGISTRY[s.pluginId].name+(s.bypassed?' (bypassed)':'')).join(' · '):'Your eight insert slots are ready. No processing is added automatically.');
-  const row=actions();button('Open Plugin Vault',openVault,row,true);button('Manual plugin workshop',()=>{const i=slotState.findIndex(s=>s.pluginId);if(i<0)return openVault();hide();openWorkstation(i)},row);button('Next · listen & save',()=>goto(3),row);
- }else{
-  text('h2','Listen & save');text('p','Listen to the result, compare it with your original, then save your chain or export the processed mix.');
-  const row=actions();const playButton=button(playing?'Pause':'Play',async()=>{playing?pause():await play();render()},row,true);playButton.dataset.guidePlayback='true';playButton.disabled=!loaded||locked;button('Stop',()=>{stop();render()},row).disabled=!loaded;
-  const compare=button(AB?'B · Original':'A · Processed',()=>{toggleReference();render()},row);compare.setAttribute('aria-pressed',String(AB));compare.disabled=!loaded;
-  const saveRow=actions();button('Save chain',saveChain,saveRow).disabled=locked;button('Export mix · WAV',()=>window.HEM_EXPORT_MASTER(),saveRow).disabled=!loaded||locked;
-  text('p','Save chain keeps plugin settings in this browser. Export mix downloads the processed audio; A/B is for listening only.');
- }
- const live=text('div',status.textContent,'guide-status');live.setAttribute('role','status');
-}
-async function checkAudio(){
- if(checking||importing||api.busy)return;const sources=currentSources();if(!sources.length){say('Load a song or stems first.');goto(0);return}
- checking=true;analysis=null;step=1;const original=buffer;render();
- try{
-  const rate=sources[0].sampleRate,length=Math.max(...sources.map(b=>b.length));
-  if(sources.some(b=>b.sampleRate!==rate))throw Error('Reload the stems together to use a common sample rate.');
-  const channels=sources.map(b=>[b.getChannelData(0),b.getChannelData(Math.min(1,b.numberOfChannels-1))]);
-  let peak=0,ll=0,rr=0,lr=0,clipped=0;
-  for(let start=0;start<length;start+=262144){
-   if(buffer!==original)throw Error('Audio changed during the check. Check the new selection again.');
-   const end=Math.min(length,start+262144);
-   for(let i=start;i<end;i++){let l=0,r=0;for(const [left,right]of channels){l+=left[i]||0;r+=right[i]||0}peak=Math.max(peak,Math.abs(l),Math.abs(r));ll+=l*l;rr+=r*r;lr+=l*r;if(Math.abs(l)>=1||Math.abs(r)>=1)clipped++}
-   await new Promise(resolve=>setTimeout(resolve,0));
-  }
-  const rms=Math.sqrt((ll+rr)/(2*length)),corr=ll*rr>1e-18?lr/Math.sqrt(ll*rr):null,dbText=v=>v>1e-9?(20*Math.log10(v)).toFixed(1):'−∞';
-  const notes=[];
-  if(peak<1e-7)notes.push('The selection is silent. Check that the intended audio was loaded.');
-  else if(clipped)notes.push('Samples reach or exceed 0 dBFS. Lower the input level before adding gain.');
-  else notes.push('No samples at or above 0 dBFS were detected.');
-  if(corr!==null&&corr<0)notes.push('Negative stereo correlation: check mono compatibility with SIPA.');
-  if(sources.length>1)notes.push('Stems are summed from 0:00. Make sure their exports share the same start point.');
-  notes.push('These are sample peak, RMS and phase checks of the source, not LUFS or true-peak measurements.');
-  analysis={peakDb:dbText(peak),rmsDb:dbText(rms),correlation:corr===null?'—':corr.toFixed(2),duration:length/rate,notes};analysisSource=original;
-  say('Audio check complete. Choose plugins when you are ready.');
- }catch(e){say(e.message,true)}finally{checking=false;render()}
-}
-const originalFileChange=$('files').onchange;
-$('files').onchange=async function(e){
- if(api.busy||checking||importing){say('Please wait for the current operation.');this.value='';return}
- const files=[...this.files];if(!files.length)return;
- analysis=null;analysisSource=null;step=0;importing=true;render();
- try{
-  if(importMode==='stems'){this.value='';const results=await api.importFiles(files);const failed=results.filter(r=>r.status==='failed');if(failed.length)say(failed.map(r=>r.name+': '+r.reason).join(' · '),true)}
-  else await originalFileChange.call(this,e);
- }catch(err){say(err.message,true)}finally{importing=false;render()}
-};
-new MutationObserver(()=>{const b=guide.querySelector('[data-guide-playback]');if(b)b.textContent=playing?'Pause':'Play'}).observe($('mobilePlay'),{childList:true,subtree:true,characterData:true});
-new MutationObserver(()=>{const message=guide.querySelector('.guide-status');if(message)message.textContent=status.textContent;$('guide-session').textContent=session()}).observe(status,{childList:true,subtree:true,characterData:true});
-window.addEventListener('hem-stem-change',render);
-render();hostAccess(false);
-})();
+// Keep load/error feedback inside the fixed host stage.
+$('status').className='host-status';stage.append($('status'));
 
 </script></body></html>
